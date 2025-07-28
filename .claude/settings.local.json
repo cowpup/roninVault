@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cut:*)",
+      "Bash(python:*)",
+      "Bash(del:*)",
+      "Bash(rm:*)",
+      "Bash(dir:*)",
+      "Bash(mv:*)",
+      "Bash(grep:*)"
+    ],
+    "deny": []
+  }
+}

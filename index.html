@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Vault Shipping Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .file-input-wrapper {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .results-section {
+            margin-top: 30px;
+        }
+        .summary {
+            background-color: #e8f4f8;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .summary h3 {
+            margin-top: 0;
+            color: #2c5aa0;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .summary-item {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .summary-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .summary-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status-vault-only {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .status-vault-ship {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .export-section {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+        }
+        .table-wrapper {
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pokemon Vault Shipping Tracker</h1>
+        
+        <!-- REF Data Management Section -->
+        <div class="upload-section" style="background-color: #fff3cd; border-color: #ffeaa7;">
+            <h2>🔒 Global Reference Data (REF/NFT To Mint)</h2>
+            <div id="refDataStatus" style="margin-bottom: 15px;">
+                <div id="refDataLoaded" style="display: none; color: #155724; background-color: #d4edda; padding: 10px; border-radius: 4px;">
+                    ✅ <strong>REF data loaded</strong> - <span id="refItemCount"></span> items in database
+                    <button onclick="showRefDataInfo()" style="margin-left: 10px; padding: 2px 8px; font-size: 12px;">View Info</button>
+                </div>
+                <div id="refDataMissing" style="display: none; color: #856404; background-color: #fff3cd; padding: 10px; border-radius: 4px;">
+                    ⚠️ <strong>No REF data found</strong> - Please upload the reference data file below
+                </div>
+            </div>
+            
+            <div id="refUploadSection" style="display: none;">
+                <div class="file-input-wrapper">
+                    <label for="refDataFile">Upload REF/NFT To Mint Data (CSV) - <strong>One-time setup</strong>:</label>
+                    <input type="file" id="refDataFile" accept=".csv" />
+                    <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                        This will be stored permanently and used for all future processing sessions.
+                    </p>
+                </div>
+                <button onclick="uploadRefData()" id="uploadRefBtn">Upload & Save REF Data</button>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                <button onclick="clearRefData()" style="background-color: #dc3545; font-size: 12px; padding: 5px 10px;">Clear REF Data</button>
+                <span style="font-size: 11px; color: #666; margin-left: 10px;">Use only if you need to replace the reference data</span>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <h2>Upload Processing Files</h2>
+            
+            <div class="file-input-wrapper">
+                <label for="pokemonPackFile">Pokemon Pack Data (CSV):</label>
+                <input type="file" id="pokemonPackFile" accept=".csv" />
+            </div>
+            
+            <div class="file-input-wrapper">
+                <label for="productPurchasesFile">Product Purchases (CSV):</label>
+                <input type="file" id="productPurchasesFile" accept=".csv" />
+            </div>
+            
+            <button onclick="processFiles()" id="processBtn" disabled>Process Files</button>
+            <button onclick="clearResults()" id="clearBtn">Clear Results</button>
+        </div>
+        
+        <div id="results" class="results-section" style="display: none;">
+            <div class="summary" id="summary"></div>
+            <div class="export-section">
+                <h3>Export Options</h3>
+                <button onclick="exportToCSV()">Export to CSV</button>
+                <button onclick="exportToExcel()">Export to Excel Format</button>
+                <button onclick="copyToClipboard()">Copy Table to Clipboard</button>
+                <button onclick="saveSnapshot()">Save Snapshot Locally</button>
+                <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                    Tab name for NEC_TO_SHIP: <strong id="tabName"></strong>
+                </p>
+                <div id="saveStatus" style="margin-top: 10px; font-size: 14px; color: #28a745; display: none;"></div>
+            </div>
+            <div class="table-wrapper">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Token ID</th>
+                            <th>Cert Number</th>
+                            <th>Status</th>
+                            <th>Title</th>
+                            <th>Grade</th>
+                            <th>Ref Price (USD)</th>
+                            <th>NEC Cost (USD)</th>
+                            <th>Claimed Date</th>
+                            <th>Buyer</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="errorMessage" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        let processedData = [];
+        let globalRefData = [];
+        
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let j = 0; j < lines[i].length; j++) {
+                    const char = lines[i][j];
+                    
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.trim().replace(/^"|"$/g, ''));
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim().replace(/^"|"$/g, ''));
+                
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] || '';
+                });
+                data.push(row);
+            }
+            
+            return data;
+        }
+        
+        async function processFiles() {
+            const pokemonPackFile = document.getElementById('pokemonPackFile').files[0];
+            const productPurchasesFile = document.getElementById('productPurchasesFile').files[0];
+            
+            if (!pokemonPackFile || !productPurchasesFile) {
+                showError('Please upload both required files.');
+                return;
+            }
+            
+            if (globalRefData.length === 0) {
+                showError('REF data not loaded. Please upload the REF data first.');
+                return;
+            }
+            
+            try {
+                // Read files
+                const pokemonPackText = await pokemonPackFile.text();
+                const productPurchasesText = await productPurchasesFile.text();
+                
+                // Parse CSV data
+                const pokemonPackData = parseCSV(pokemonPackText);
+                const productPurchasesData = parseCSV(productPurchasesText);
+                
+                // Use global REF data
+                const nftToMintData = globalRefData;
+                
+                // Create lookup maps
+                const nftLookup = {};
+                nftToMintData.forEach(row => {
+                    nftLookup[row.ID || row.id] = row;
+                });
+                
+                // Debug: Check sample NFT data
+                console.log('Sample NFT data:', nftToMintData[0]);
+                console.log('NFT headers:', Object.keys(nftToMintData[0] || {}));
+                
+                const purchaseLookup = new Set();
+                productPurchasesData.forEach(row => {
+                    if (row.cert_number) {
+                        purchaseLookup.add(row.cert_number);
+                    }
+                });
+                
+                // Process Pokemon Pack Data
+                processedData = [];
+                const tokenIdTracker = {};
+                const processedTokenIds = new Set();
+                
+                // First pass: track all statuses for each token_id
+                pokemonPackData.forEach(row => {
+                    const tokenId = row.token_id;
+                    if (!tokenIdTracker[tokenId]) {
+                        tokenIdTracker[tokenId] = [];
+                    }
+                    tokenIdTracker[tokenId].push(row);
+                });
+                
+                // Second pass: process based on priority (claimed/blank > buyback)
+                Object.entries(tokenIdTracker).forEach(([tokenId, rows]) => {
+                    // Check if any row has claimed or blank status
+                    const hasClaimedOrBlank = rows.some(row => 
+                        row.status === 'claimed' || row.status === ''
+                    );
+                    
+                    if (hasClaimedOrBlank) {
+                        // Find the row to use (prefer claimed/blank)
+                        const rowToUse = rows.find(row => 
+                            row.status === 'claimed' || row.status === ''
+                        ) || rows[0];
+                        
+                        // Get NFT data
+                        const nftData = nftLookup[tokenId];
+                        if (!nftData) {
+                            console.warn(`No NFT data found for token_id: ${tokenId}`);
+                            return;
+                        }
+                        
+                        const certNumber = nftData['SERIAL NUMBER'] || nftData['serial_number'];
+                        // Handle different price field names and ensure proper parsing
+                        let refPrice = 0;
+                        const priceField = nftData['Price in USD'] || nftData['price_in_usd'] || nftData['Price'] || nftData['price'] || '0';
+                        
+                        // Remove any currency symbols, commas, and whitespace
+                        const cleanPrice = String(priceField).replace(/[$,\s]/g, '');
+                        refPrice = parseFloat(cleanPrice);
+                        
+                        // Check if price is valid
+                        if (isNaN(refPrice) || refPrice <= 0) {
+                            console.warn(`Invalid price for token_id ${tokenId}: "${priceField}" -> ${refPrice}`);
+                            refPrice = 0;
+                        }
+                        
+                        const necCost = Math.ceil(refPrice / 1.15); // Always round up to nearest dollar
+                        
+                        // Check if it's in product purchases
+                        const isInPurchases = purchaseLookup.has(certNumber);
+                        const status = isInPurchases ? 'Vault + Ship' : 'Vault Only';
+                        
+                        processedData.push({
+                            tokenId: tokenId,
+                            certNumber: certNumber,
+                            status: status,
+                            title: nftData.TITLE || nftData.title || '',
+                            grade: nftData.GRADE || nftData.grade || '',
+                            refPrice: refPrice,
+                            necCost: necCost,
+                            claimedDate: rowToUse.claimed_timestamp || '',
+                            buyer: rowToUse.buyer || '',
+                            note: '' // Regular items have no note
+                        });
+                        
+                        processedTokenIds.add(tokenId);
+                    }
+                });
+                
+                // Third pass: Add items from product_purchases that weren't found in pack data as claimed
+                productPurchasesData.forEach(purchase => {
+                    if (!purchase.cert_number) return;
+                    
+                    const certNumber = purchase.cert_number;
+                    // Find the corresponding REF data
+                    const refData = globalRefData.find(ref => 
+                        (ref['SERIAL NUMBER'] || ref['serial_number']) === certNumber
+                    );
+                    
+                    if (!refData) return;
+                    
+                    const tokenId = refData.ID || refData.id;
+                    
+                    // Skip if we already processed this token ID from pack data
+                    if (processedTokenIds.has(tokenId)) return;
+                    
+                    // This is a purchased item not found as claimed in pack data
+                    let refPrice = 0;
+                    const priceField = refData['Price in USD'] || refData['price_in_usd'] || refData['Price'] || refData['price'] || '0';
+                    const cleanPrice = String(priceField).replace(/[$,\s]/g, '');
+                    refPrice = parseFloat(cleanPrice);
+                    
+                    if (isNaN(refPrice) || refPrice <= 0) {
+                        console.warn(`Invalid price for cert ${certNumber}: "${priceField}" -> ${refPrice}`);
+                        refPrice = 0;
+                    }
+                    
+                    const necCost = Math.ceil(refPrice / 1.15);
+                    
+                    // Check if this token exists in pack data at all (even as buyback)
+                    const existsInPackData = tokenIdTracker[tokenId];
+                    const note = existsInPackData ? 'Buyback only in Ronin data' : 'Not found in Ronin data';
+                    
+                    processedData.push({
+                        tokenId: tokenId,
+                        certNumber: certNumber,
+                        status: 'Vault + Ship',
+                        title: refData.TITLE || refData.title || '',
+                        grade: refData.GRADE || refData.grade || '',
+                        refPrice: refPrice,
+                        necCost: necCost,
+                        claimedDate: '', // No claim date available
+                        buyer: '', // No buyer info from pack data
+                        note: note
+                    });
+                });
+                
+                // Sort by claimed date (most recent first)
+                processedData.sort((a, b) => {
+                    const dateA = new Date(a.claimedDate || '1900-01-01');
+                    const dateB = new Date(b.claimedDate || '1900-01-01');
+                    return dateB - dateA; // Descending order
+                });
+                
+                // Debug: Compare product purchases vs vault+ship results
+                debugPurchaseMatching(productPurchasesData, processedData);
+                
+                // Display results
+                displayResults();
+                
+            } catch (error) {
+                showError('Error processing files: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            const summaryDiv = document.getElementById('summary');
+            const resultsBody = document.getElementById('resultsBody');
+            
+            // Calculate summary
+            let totalItems = processedData.length;
+            let vaultOnlyCount = 0;
+            let vaultShipCount = 0;
+            let totalNecCost = 0;
+            let vaultOnlyCost = 0;
+            let vaultShipCost = 0;
+            
+            processedData.forEach(item => {
+                totalNecCost += item.necCost;
+                if (item.status === 'Vault Only') {
+                    vaultOnlyCount++;
+                    vaultOnlyCost += item.necCost;
+                } else {
+                    vaultShipCount++;
+                    vaultShipCost += item.necCost;
+                }
+            });
+            
+            // Display summary
+            summaryDiv.innerHTML = `
+                <h3>Processing Summary</h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Total Items</div>
+                        <div class="summary-value">${totalItems}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Vault Only</div>
+                        <div class="summary-value">${vaultOnlyCount}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Vault + Ship</div>
+                        <div class="summary-value">${vaultShipCount}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Total NEC Cost</div>
+                        <div class="summary-value">$${totalNecCost.toLocaleString()}.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Vault Only Cost</div>
+                        <div class="summary-value">$${vaultOnlyCost.toLocaleString()}.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Vault + Ship Cost</div>
+                        <div class="summary-value">$${vaultShipCost.toLocaleString()}.00</div>
+                    </div>
+                </div>
+            `;
+            
+            // Set tab name
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            document.getElementById('tabName').textContent = dateStr;
+            
+            // Display table
+            resultsBody.innerHTML = '';
+            processedData.forEach(item => {
+                const row = resultsBody.insertRow();
+                row.innerHTML = `
+                    <td>${item.tokenId}</td>
+                    <td>${item.certNumber}</td>
+                    <td><span class="${item.status === 'Vault Only' ? 'status-vault-only' : 'status-vault-ship'}">${item.status}</span></td>
+                    <td>${item.title}</td>
+                    <td>${item.grade}</td>
+                    <td>$${item.refPrice.toFixed(2)}</td>
+                    <td>$${item.necCost.toFixed(0)}.00</td>
+                    <td>${formatDate(item.claimedDate)}</td>
+                    <td>${item.buyer}</td>
+                    <td><span style="font-size: 12px; color: ${item.note ? '#856404' : '#666'}; font-style: italic;">${item.note || ''}</span></td>
+                `;
+            });
+            
+            resultsDiv.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            if (isNaN(date)) return dateStr;
+            return date.toLocaleDateString();
+        }
+        
+        function exportToCSV() {
+            let csv = 'Token ID,Cert Number,Status,Title,Grade,Ref Price (USD),NEC Cost (USD),Claimed Date,Buyer,Note\n';
+            
+            processedData.forEach(item => {
+                csv += `${item.tokenId},"${item.certNumber}","${item.status}","${item.title}","${item.grade}",${item.refPrice.toFixed(2)},${item.necCost},"${item.claimedDate}","${item.buyer}","${item.note || ''}"\n`;
+            });
+            
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const filename = `vault_shipments_${dateStr}.csv`;
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        function copyToClipboard() {
+            let text = 'Token ID\tCert Number\tStatus\tTitle\tGrade\tRef Price (USD)\tNEC Cost (USD)\tClaimed Date\tBuyer\tNote\n';
+            
+            processedData.forEach(item => {
+                text += `${item.tokenId}\t${item.certNumber}\t${item.status}\t${item.title}\t${item.grade}\t${item.refPrice.toFixed(2)}\t${item.necCost}\t${item.claimedDate}\t${item.buyer}\t${item.note || ''}\n`;
+            });
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Table copied to clipboard! You can paste it directly into Excel.');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                showError('Failed to copy to clipboard');
+            });
+        }
+        
+        function clearResults() {
+            document.getElementById('pokemonPackFile').value = '';
+            document.getElementById('nftToMintFile').value = '';
+            document.getElementById('productPurchasesFile').value = '';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            processedData = [];
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function exportToExcel() {
+            // Create HTML table for Excel
+            let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" ';
+            html += 'xmlns:x="urn:schemas-microsoft-com:office:excel" ';
+            html += 'xmlns="http://www.w3.org/TR/REC-html40">';
+            html += '<head><meta charset="utf-8"><title>Vault Shipments</title></head>';
+            html += '<body>';
+            
+            // Add summary section
+            html += '<h2>Vault Shipment Summary</h2>';
+            html += '<table border="1" style="margin-bottom: 20px;">';
+            html += '<tr><td><b>Total Items</b></td><td>' + processedData.length + '</td></tr>';
+            
+            let vaultOnlyCount = processedData.filter(item => item.status === 'Vault Only').length;
+            let vaultShipCount = processedData.filter(item => item.status === 'Vault + Ship').length;
+            let totalNecCost = processedData.reduce((sum, item) => sum + item.necCost, 0);
+            let vaultOnlyCost = processedData.filter(item => item.status === 'Vault Only').reduce((sum, item) => sum + item.necCost, 0);
+            let vaultShipCost = processedData.filter(item => item.status === 'Vault + Ship').reduce((sum, item) => sum + item.necCost, 0);
+            
+            html += '<tr><td><b>Vault Only</b></td><td>' + vaultOnlyCount + '</td></tr>';
+            html += '<tr><td><b>Vault + Ship</b></td><td>' + vaultShipCount + '</td></tr>';
+            html += '<tr><td><b>Total NEC Cost</b></td><td>$' + totalNecCost + '.00</td></tr>';
+            html += '<tr><td><b>Vault Only Cost</b></td><td>$' + vaultOnlyCost + '.00</td></tr>';
+            html += '<tr><td><b>Vault + Ship Cost</b></td><td>$' + vaultShipCost + '.00</td></tr>';
+            html += '</table>';
+            
+            // Add detail table
+            html += '<h2>Vault Shipment Details</h2>';
+            html += '<table border="1">';
+            html += '<tr><th>Token ID</th><th>Cert Number</th><th>Status</th><th>Title</th><th>Grade</th><th>Ref Price (USD)</th><th>NEC Cost (USD)</th><th>Claimed Date</th><th>Buyer</th><th>Note</th></tr>';
+            
+            processedData.forEach(item => {
+                html += '<tr>';
+                html += '<td>' + item.tokenId + '</td>';
+                html += '<td>' + item.certNumber + '</td>';
+                html += '<td>' + item.status + '</td>';
+                html += '<td>' + item.title + '</td>';
+                html += '<td>' + item.grade + '</td>';
+                html += '<td>$' + item.refPrice.toFixed(2) + '</td>';
+                html += '<td>$' + item.necCost + '.00</td>';
+                html += '<td>' + formatDate(item.claimedDate) + '</td>';
+                html += '<td>' + item.buyer + '</td>';
+                html += '<td>' + (item.note || '') + '</td>';
+                html += '</tr>';
+            });
+            
+            html += '</table></body></html>';
+            
+            const today = new Date();
+            const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            const filename = `vault_shipments_${dateStr}.xls`;
+            
+            const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        function saveSnapshot() {
+            // Save current data to localStorage
+            const snapshot = {
+                date: new Date().toISOString(),
+                tabName: document.getElementById('tabName').textContent,
+                data: processedData,
+                summary: {
+                    totalItems: processedData.length,
+                    vaultOnlyCount: processedData.filter(item => item.status === 'Vault Only').length,
+                    vaultShipCount: processedData.filter(item => item.status === 'Vault + Ship').length,
+                    totalNecCost: processedData.reduce((sum, item) => sum + item.necCost, 0),
+                    vaultOnlyCost: processedData.filter(item => item.status === 'Vault Only').reduce((sum, item) => sum + item.necCost, 0),
+                    vaultShipCost: processedData.filter(item => item.status === 'Vault + Ship').reduce((sum, item) => sum + item.necCost, 0)
+                }
+            };
+            
+            // Get existing snapshots
+            let snapshots = JSON.parse(localStorage.getItem('vaultShipmentSnapshots') || '[]');
+            
+            // Add new snapshot
+            snapshots.push(snapshot);
+            
+            // Keep only last 10 snapshots
+            if (snapshots.length > 10) {
+                snapshots = snapshots.slice(-10);
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('vaultShipmentSnapshots', JSON.stringify(snapshots));
+            
+            // Also save as a downloadable JSON file
+            const jsonStr = JSON.stringify(snapshot, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `vault_snapshot_${snapshot.tabName}.json`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+            
+            // Show success message
+            const statusDiv = document.getElementById('saveStatus');
+            statusDiv.textContent = 'Snapshot saved successfully!';
+            statusDiv.style.display = 'block';
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Debug function to identify missing Vault+Ship items
+        function debugPurchaseMatching(productPurchasesData, processedData) {
+            console.log('=== DEBUGGING PURCHASE MATCHING ===');
+            
+            // Get all cert numbers from product purchases
+            const purchaseCertNumbers = new Set();
+            productPurchasesData.forEach(row => {
+                if (row.cert_number && row.cert_number.trim()) {
+                    purchaseCertNumbers.add(row.cert_number.trim());
+                }
+            });
+            
+            // Get all cert numbers from Vault+Ship results
+            const vaultShipCertNumbers = new Set();
+            processedData.forEach(row => {
+                if (row.status === 'Vault + Ship') {
+                    vaultShipCertNumbers.add(row.certNumber);
+                }
+            });
+            
+            console.log(`Product Purchases: ${purchaseCertNumbers.size} cert numbers`);
+            console.log(`Vault + Ship Results: ${vaultShipCertNumbers.size} cert numbers`);
+            
+            // Find missing items (in purchases but not in vault+ship)
+            const missingFromVaultShip = [];
+            purchaseCertNumbers.forEach(certNum => {
+                if (!vaultShipCertNumbers.has(certNum)) {
+                    missingFromVaultShip.push(certNum);
+                }
+            });
+            
+            // Find extra items (in vault+ship but not in purchases)
+            const extraInVaultShip = [];
+            vaultShipCertNumbers.forEach(certNum => {
+                if (!purchaseCertNumbers.has(certNum)) {
+                    extraInVaultShip.push(certNum);
+                }
+            });
+            
+            if (missingFromVaultShip.length > 0) {
+                console.log(`❌ MISSING FROM VAULT+SHIP (${missingFromVaultShip.length}):`, missingFromVaultShip);
+                
+                // For each missing cert, check if it exists in REF data
+                missingFromVaultShip.forEach(certNum => {
+                    const refMatch = globalRefData.find(ref => 
+                        (ref['SERIAL NUMBER'] || ref['serial_number']) === certNum
+                    );
+                    if (refMatch) {
+                        const tokenId = refMatch.ID || refMatch.id;
+                        console.log(`  📋 Cert ${certNum} -> Token ID ${tokenId} (exists in REF)`);
+                        
+                        // Check if this token ID appears in Pokemon Pack data
+                        const packMatch = processedData.find(item => item.tokenId === tokenId);
+                        if (!packMatch) {
+                            console.log(`    ❌ Token ID ${tokenId} NOT FOUND in Pokemon Pack data`);
+                        } else {
+                            console.log(`    ✅ Token ID ${tokenId} found in pack data as: ${packMatch.status}`);
+                        }
+                    } else {
+                        console.log(`  ❌ Cert ${certNum} NOT FOUND in REF data`);
+                    }
+                });
+            }
+            
+            if (extraInVaultShip.length > 0) {
+                console.log(`⚠️ EXTRA IN VAULT+SHIP (${extraInVaultShip.length}):`, extraInVaultShip);
+            }
+            
+            console.log('=== END DEBUG ===');
+        }
+        
+        // REF Data Management Functions
+        async function uploadRefData() {
+            const refFile = document.getElementById('refDataFile').files[0];
+            if (!refFile) {
+                showError('Please select a REF data file to upload.');
+                return;
+            }
+            
+            try {
+                const refText = await refFile.text();
+                const refData = parseCSV(refText);
+                
+                if (refData.length === 0) {
+                    showError('REF file appears to be empty or invalid.');
+                    return;
+                }
+                
+                // Validate REF data structure
+                const firstRow = refData[0];
+                const requiredFields = ['ID', 'SERIAL NUMBER', 'Price in USD'];
+                const hasRequiredFields = requiredFields.every(field => 
+                    Object.keys(firstRow).some(key => 
+                        key.toLowerCase().includes(field.toLowerCase()) || 
+                        field.toLowerCase().includes(key.toLowerCase())
+                    )
+                );
+                
+                if (!hasRequiredFields) {
+                    showError('REF file missing required fields. Expected: ID, SERIAL NUMBER, Price in USD');
+                    return;
+                }
+                
+                // Store globally
+                globalRefData = refData;
+                localStorage.setItem('globalRefData', JSON.stringify(refData));
+                
+                // Update UI
+                updateRefDataStatus();
+                document.getElementById('processBtn').disabled = false;
+                
+                // Clear file input
+                document.getElementById('refDataFile').value = '';
+                
+                alert(`REF data uploaded successfully! ${refData.length} items loaded.`);
+                
+            } catch (error) {
+                showError('Error uploading REF data: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function clearRefData() {
+            if (confirm('Are you sure you want to clear the stored REF data? This will require re-uploading the reference file.')) {
+                globalRefData = [];
+                localStorage.removeItem('globalRefData');
+                updateRefDataStatus();
+                document.getElementById('processBtn').disabled = true;
+            }
+        }
+        
+        function showRefDataInfo() {
+            if (globalRefData.length === 0) {
+                alert('No REF data loaded.');
+                return;
+            }
+            
+            const sample = globalRefData[0];
+            const fields = Object.keys(sample).join(', ');
+            const priceRange = globalRefData.reduce((acc, item) => {
+                const price = parseFloat(String(item['Price in USD'] || item['price_in_usd'] || '0').replace(/[$,\s]/g, ''));
+                if (!isNaN(price)) {
+                    acc.min = Math.min(acc.min, price);
+                    acc.max = Math.max(acc.max, price);
+                }
+                return acc;
+            }, { min: Infinity, max: -Infinity });
+            
+            alert(`REF Data Info:\n\nTotal Items: ${globalRefData.length}\nFields: ${fields}\nPrice Range: $${priceRange.min} - $${priceRange.max}\n\nFirst item ID: ${sample.ID || sample.id}`);
+        }
+        
+        function updateRefDataStatus() {
+            const refDataLoaded = document.getElementById('refDataLoaded');
+            const refDataMissing = document.getElementById('refDataMissing');
+            const refUploadSection = document.getElementById('refUploadSection');
+            const refItemCount = document.getElementById('refItemCount');
+            
+            if (globalRefData.length > 0) {
+                refDataLoaded.style.display = 'block';
+                refDataMissing.style.display = 'none';
+                refUploadSection.style.display = 'none';
+                refItemCount.textContent = `${globalRefData.length}`;
+            } else {
+                refDataLoaded.style.display = 'none';
+                refDataMissing.style.display = 'block';
+                refUploadSection.style.display = 'block';
+            }
+        }
+        
+        // Load REF data and snapshots on page load
+        window.addEventListener('load', () => {
+            // Load global REF data
+            const storedRefData = localStorage.getItem('globalRefData');
+            if (storedRefData) {
+                try {
+                    globalRefData = JSON.parse(storedRefData);
+                    document.getElementById('processBtn').disabled = false;
+                    console.log(`Loaded ${globalRefData.length} REF items from storage`);
+                } catch (error) {
+                    console.error('Error loading REF data:', error);
+                    localStorage.removeItem('globalRefData');
+                }
+            }
+            updateRefDataStatus();
+            
+            // Load snapshots
+            const snapshots = JSON.parse(localStorage.getItem('vaultShipmentSnapshots') || '[]');
+            if (snapshots.length > 0) {
+                console.log(`Found ${snapshots.length} saved snapshots in browser storage`);
+            }
+        });
+    </script>
+</body>
+</html>
