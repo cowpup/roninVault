@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cert Number Comparison Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .file-input-wrapper {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .results-section {
+            margin-top: 30px;
+        }
+        .summary {
+            background-color: #e8f4f8;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .summary h3 {
+            margin-top: 0;
+            color: #2c5aa0;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .summary-item {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .summary-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .summary-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+        .missing-items {
+            background-color: #f8d7da;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .missing-items h4 {
+            color: #721c24;
+            margin-top: 0;
+        }
+        .item-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: white;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Cert Number Comparison Tool</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Analyze differences between cert numbers that should be shipped vs. already shipped
+        </p>
+        
+        <div class="upload-section">
+            <h2>Upload Comparison File</h2>
+            <div class="file-input-wrapper">
+                <label for="comparisonFile">Cert Comparison CSV (with cert_number_new and cert_number_shipped columns):</label>
+                <input type="file" id="comparisonFile" accept=".csv" />
+            </div>
+            <button onclick="analyzeComparison()">Analyze Comparison</button>
+        </div>
+        
+        <div id="results" class="results-section" style="display: none;">
+            <div class="summary" id="summary"></div>
+            <div id="missingSection" class="missing-items" style="display: none;">
+                <h4>Items Shipped to Vault but Missing from Current Analysis</h4>
+                <p>These cert numbers were shipped to vault but don't appear in your current tool output:</p>
+                <div id="missingList" class="item-list"></div>
+            </div>
+        </div>
+        
+        <div id="errorMessage" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+            
+            const data = [];
+            for (let i = 1; i < lines.length; i++) {
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+                
+                for (let j = 0; j < lines[i].length; j++) {
+                    const char = lines[i][j];
+                    
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.trim().replace(/^"|"$/g, ''));
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim().replace(/^"|"$/g, ''));
+                
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index] || '';
+                });
+                data.push(row);
+            }
+            
+            return data;
+        }
+        
+        async function analyzeComparison() {
+            const comparisonFile = document.getElementById('comparisonFile').files[0];
+            
+            if (!comparisonFile) {
+                showError('Please upload the comparison CSV file.');
+                return;
+            }
+            
+            try {
+                const comparisonText = await comparisonFile.text();
+                const comparisonData = parseCSV(comparisonText);
+                
+                // Extract cert numbers
+                const certNumbersNew = new Set();
+                const certNumbersShipped = new Set();
+                
+                comparisonData.forEach(row => {
+                    if (row.cert_number_new && row.cert_number_new.trim()) {
+                        certNumbersNew.add(row.cert_number_new.trim());
+                    }
+                    if (row.cert_number_shipped && row.cert_number_shipped.trim()) {
+                        certNumbersShipped.add(row.cert_number_shipped.trim());
+                    }
+                });
+                
+                // Find missing items (shipped but not in new analysis)
+                const missingFromNew = [];
+                certNumbersShipped.forEach(cert => {
+                    if (!certNumbersNew.has(cert)) {
+                        missingFromNew.push(cert);
+                    }
+                });
+                
+                // Find extra items (in new analysis but not shipped)
+                const extraInNew = [];
+                certNumbersNew.forEach(cert => {
+                    if (!certNumbersShipped.has(cert)) {
+                        extraInNew.push(cert);
+                    }
+                });
+                
+                // Calculate match percentage
+                const matches = [];
+                certNumbersShipped.forEach(cert => {
+                    if (certNumbersNew.has(cert)) {
+                        matches.push(cert);
+                    }
+                });
+                
+                const matchPercentage = ((matches.length / certNumbersShipped.size) * 100).toFixed(1);
+                
+                // Display results
+                displayResults({
+                    totalNew: certNumbersNew.size,
+                    totalShipped: certNumbersShipped.size,
+                    matches: matches.length,
+                    matchPercentage: matchPercentage,
+                    missingFromNew: missingFromNew,
+                    extraInNew: extraInNew
+                });
+                
+            } catch (error) {
+                showError('Error analyzing comparison: ' + error.message);
+                console.error(error);
+            }
+        }
+        
+        function displayResults(analysis) {
+            const resultsDiv = document.getElementById('results');
+            const summaryDiv = document.getElementById('summary');
+            const missingSection = document.getElementById('missingSection');
+            const missingList = document.getElementById('missingList');
+            
+            // Display summary
+            summaryDiv.innerHTML = `
+                <h3>Comparison Analysis</h3>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="summary-label">Current Tool Output</div>
+                        <div class="summary-value">${analysis.totalNew}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Already Shipped to Vault</div>
+                        <div class="summary-value">${analysis.totalShipped}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Matches Found</div>
+                        <div class="summary-value">${analysis.matches}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Match Percentage</div>
+                        <div class="summary-value">${analysis.matchPercentage}%</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Missing from Current</div>
+                        <div class="summary-value" style="color: #dc3545;">${analysis.missingFromNew.length}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">New Items (Not Yet Shipped)</div>
+                        <div class="summary-value" style="color: #28a745;">${analysis.extraInNew.length}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Show missing items if any
+            if (analysis.missingFromNew.length > 0) {
+                missingSection.style.display = 'block';
+                missingList.innerHTML = analysis.missingFromNew.sort().join('<br>');
+            } else {
+                missingSection.style.display = 'none';
+            }
+            
+            resultsDiv.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+            
+            // Log details to console for debugging
+            console.log('=== COMPARISON ANALYSIS ===');
+            console.log(`Current tool output: ${analysis.totalNew} items`);
+            console.log(`Already shipped: ${analysis.totalShipped} items`);
+            console.log(`Matches: ${analysis.matches} items (${analysis.matchPercentage}%)`);
+            console.log(`Missing from current analysis: ${analysis.missingFromNew.length} items`);
+            console.log(`New items not yet shipped: ${analysis.extraInNew.length} items`);
+            
+            if (analysis.missingFromNew.length > 0) {
+                console.log('\nMISSING FROM CURRENT ANALYSIS:');
+                analysis.missingFromNew.sort().forEach(cert => console.log(cert));
+            }
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
