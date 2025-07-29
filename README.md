@@ -1,5 +1,7 @@
 # RoninVault - Pokemon Card Inventory Management System
 
+*Last updated: July 2025*
+
 ## Overview
 
 RoninVault is a Pokemon card inventory management tool that processes transaction data from Ronin to determine which cards need to be shipped to the vault versus shipped directly to customers. The system automatically categorizes items, calculates costs, and provides export functionality for tracking purposes.
